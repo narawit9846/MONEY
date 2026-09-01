@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Money & Debt Tracker</title>
+
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MoneyTracker">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2489/2489756.png">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen p-4 md:p-8 font-sans max-w-2xl mx-auto select-none">
+
+  <h1 class="text-2xl font-bold text-slate-800 mb-6 text-center">💰 รายรับ-รายจ่าย & ยืมคืนเงิน</h1>
+
+  <!-- Dashboard -->
+  <div class="grid grid-cols-3 gap-3 mb-6">
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
+      <p class="text-xs text-slate-500 font-medium">เงินคงเหลือ</p>
+      <p id="totalBalance" class="text-xl font-bold text-emerald-600">฿0</p>
+    </div>
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
+      <p class="text-xs text-slate-500 font-medium">เราเป็นหนี้</p>
+      <p id="totalBorrow" class="text-xl font-bold text-rose-600">฿0</p>
+    </div>
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
+      <p class="text-xs text-slate-500 font-medium">เขายืมเรา</p>
+      <p id="totalLend" class="text-xl font-bold text-blue-600">฿0</p>
+    </div>
+  </div>
+
+  <!-- Form Insert -->
+  <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 mb-6">
+    <h2 class="text-lg font-semibold text-slate-700 mb-4">บันทึกรายการใหม่</h2>
+    <form id="trackerForm" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-600 mb-1">ประเภทรายการ</label>
+        <select id="type" onchange="toggleDebtFields()" class="w-full p-2.5 border rounded-lg bg-slate-50 focus:ring-2 focus:ring-emerald-500 outline-none">
+          <option value="income">รายรับ (+)</option>
+          <option value="expense">รายจ่าย (-)</option>
+          <option value="borrow">ยืมเงินเขา (ได้รับเงินเข้ามา)</option>
+          <option value="lend">ให้เขายืมเงิน (เงินออกจากเรา)</option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium text-slate-600 mb-1">จำนวนเงิน (บาท)</label>
+          <input type="number" id="amount" required placeholder="0.00" class="w-full p-2.5 border rounded-lg bg-slate-50 outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-600 mb-1">รายละเอียด / โน้ต</label>
+          <input type="text" id="note" placeholder="เช่น ค่าอาหาร, ยืมค่าน้ำมัน" class="w-full p-2.5 border rounded-lg bg-slate-50 outline-none">
+        </div>
+      </div>
+
+      <!-- Extra Fields for Borrow/Lend -->
+      <div id="debtFields" class="hidden grid grid-cols-2 gap-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+        <div>
+          <label class="block text-sm font-medium text-amber-900 mb-1">ชื่อคนที่ยืม/ให้ยืม</label>
+          <input type="text" id="person" placeholder="เช่น ก้อง, นก" class="w-full p-2.5 border rounded-lg bg-white outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-amber-900 mb-1">วันครบกำหนดคืน</label>
+          <input type="date" id="dueDate" class="w-full p-2.5 border rounded-lg bg-white outline-none">
+        </div>
+      </div>
+
+      <button type="submit" class="w-full bg-slate-800 text-white py-3 rounded-lg font-medium hover:bg-slate-700 transition">บันทึกข้อมูล</button>
+    </form>
+  </div>
+
+  <!-- Transaction List -->
+  <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+    <h2 class="text-lg font-semibold text-slate-700 mb-4">ประวัติและรายการยืม-คืนเงิน</h2>
+    <div id="list" class="space-y-3"></div>
+  </div>
+
+  <script>
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').then(() => {
+        console.log('Service Worker Registered');
+      });
+    }
+
+    let transactions = JSON.parse(localStorage.getItem('my_transactions')) || [];
+
+    function toggleDebtFields() {
+      const type = document.getElementById('type').value;
+      const debtFields = document.getElementById('debtFields');
+      if (type === 'borrow' || type === 'lend') {
+        debtFields.classList.remove('hidden');
+      } else {
+        debtFields.classList.add('hidden');
+      }
+    }
+
+    document.getElementById('trackerForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const type = document.getElementById('type').value;
+      const amount = parseFloat(document.getElementById('amount').value);
+      const note = document.getElementById('note').value;
+      const person = document.getElementById('person').value;
+      const dueDate = document.getElementById('dueDate').value;
+
+      const newItem = {
+        id: Date.now(),
+        type,
+        amount,
+        note: note || (type === 'borrow' ? `ยืมเงิน ${person}` : type === 'lend' ? `ให้ ${person} ยืม` : ''),
+        person,
+        dueDate,
+        status: (type === 'borrow' || type === 'lend') ? 'pending' : 'completed',
+        date: new Date().toLocaleDateString('th-TH')
+      };
+
+      transactions.unshift(newItem);
+      saveAndRender();
+      this.reset();
+      toggleDebtFields();
+    });
+
+    function toggleStatus(id) {
+      transactions = transactions.map(item => {
+        if (item.id === id) {
+          item.status = item.status === 'pending' ? 'paid' : 'pending';
+        }
+        return item;
+      });
+      saveAndRender();
+    }
+
+    function deleteItem(id) {
+      transactions = transactions.filter(item => item.id !== id);
+      saveAndRender();
+    }
+
+    function saveAndRender() {
+      localStorage.setItem('my_transactions', JSON.stringify(transactions));
+      
+      let balance = 0, totalBorrow = 0, totalLend = 0;
+
+      const listEl = document.getElementById('list');
+      listEl.innerHTML = '';
+
+      if (transactions.length === 0) {
+        listEl.innerHTML = '<p class="text-center text-slate-400 py-4">ยังไม่มีข้อมูล</p>';
+      }
+
+      transactions.forEach(item => {
+        if (item.type === 'income' || item.type === 'borrow') balance += item.amount;
+        if (item.type === 'expense' || item.type === 'lend') balance -= item.amount;
+
+        if (item.type === 'borrow' && item.status === 'pending') totalBorrow += item.amount;
+        if (item.type === 'lend' && item.status === 'pending') totalLend += item.amount;
+
+        const isDebt = item.type === 'borrow' || item.type === 'lend';
+        const card = document.createElement('div');
+        card.className = `p-3 rounded-lg border flex items-center justify-between ${
+          item.type === 'income' ? 'bg-emerald-50 border-emerald-200' :
+          item.type === 'expense' ? 'bg-rose-50 border-rose-200' : 'bg-amber-50 border-amber-200'
+        }`;
+
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-semibold text-slate-800">${item.note}</span>
+              ${isDebt ? `
+                <span class="text-xs px-2 py-0.5 rounded-full ${item.status === 'paid' ? 'bg-emerald-200 text-emerald-800' : 'bg-rose-200 text-rose-800'}">
+                  ${item.status === 'paid' ? 'คืนแล้ว' : 'ยังไม่คืน'}
+                </span>
+              ` : ''}
+            </div>
+            <p class="text-xs text-slate-500">
+              ${item.date} ${item.person ? `• ชื่อ: ${item.person}` : ''} ${item.dueDate ? `• กำหนด: ${item.dueDate}` : ''}
+            </p>
+          </div>
+          <div class="text-right flex items-center gap-3">
+            <span class="font-bold ${item.type === 'income' || item.type === 'borrow' ? 'text-emerald-600' : 'text-rose-600'}">
+              ${item.type === 'income' || item.type === 'borrow' ? '+' : '-'}฿${item.amount.toLocaleString()}
+            </span>
+            ${isDebt ? `<button onclick="toggleStatus(${item.id})" class="text-xs bg-white border border-slate-300 px-2 py-1 rounded hover:bg-slate-100">เปลี่ยนสถานะ</button>` : ''}
+            <button onclick="deleteItem(${item.id})" class="text-xs text-rose-500 hover:underline">ลบ</button>
+          </div>
+        `;
+        listEl.appendChild(card);
+      });
+
+      document.getElementById('totalBalance').innerText = `฿${balance.toLocaleString()}`;
+      document.getElementById('totalBorrow').innerText = `฿${totalBorrow.toLocaleString()}`;
+      document.getElementById('totalLend').innerText = `฿${totalLend.toLocaleString()}`;
+    }
+
+    saveAndRender();
+  </script>
+</body>
+</html>
