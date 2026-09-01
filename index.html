@@ -3,98 +3,340 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Money & Debt Tracker</title>
+  <title>WealthFlow — รายรับ รายจ่าย & ยืมคืนเงิน</title>
 
-  <!-- PWA Meta Tags -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#4f46e5">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="MoneyTracker">
-  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2489/2489756.png">
+  <meta name="apple-mobile-web-app-title" content="WealthFlow">
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', 'Sarabun', sans-serif;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .gradient-bg {
+      background: linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #4338ca 100%);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+  </style>
 </head>
-<body class="bg-slate-100 min-h-screen p-4 md:p-8 font-sans max-w-2xl mx-auto select-none">
+<body class="bg-slate-900 min-h-screen text-slate-800 antialiased selection:bg-indigo-500 selection:text-white">
 
-  <h1 class="text-2xl font-bold text-slate-800 mb-6 text-center">💰 รายรับ-รายจ่าย & ยืมคืนเงิน</h1>
+  <div class="max-w-md mx-auto min-h-screen bg-slate-50 flex flex-col shadow-2xl relative overflow-hidden">
 
-  <!-- Dashboard -->
-  <div class="grid grid-cols-3 gap-3 mb-6">
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
-      <p class="text-xs text-slate-500 font-medium">เงินคงเหลือ</p>
-      <p id="totalBalance" class="text-xl font-bold text-emerald-600">฿0</p>
-    </div>
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
-      <p class="text-xs text-slate-500 font-medium">เราเป็นหนี้</p>
-      <p id="totalBorrow" class="text-xl font-bold text-rose-600">฿0</p>
-    </div>
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
-      <p class="text-xs text-slate-500 font-medium">เขายืมเรา</p>
-      <p id="totalLend" class="text-xl font-bold text-blue-600">฿0</p>
-    </div>
-  </div>
-
-  <!-- Form Insert -->
-  <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 mb-6">
-    <h2 class="text-lg font-semibold text-slate-700 mb-4">บันทึกรายการใหม่</h2>
-    <form id="trackerForm" class="space-y-4">
-      <div>
-        <label class="block text-sm font-medium text-slate-600 mb-1">ประเภทรายการ</label>
-        <select id="type" onchange="toggleDebtFields()" class="w-full p-2.5 border rounded-lg bg-slate-50 focus:ring-2 focus:ring-emerald-500 outline-none">
-          <option value="income">รายรับ (+)</option>
-          <option value="expense">รายจ่าย (-)</option>
-          <option value="borrow">ยืมเงินเขา (ได้รับเงินเข้ามา)</option>
-          <option value="lend">ให้เขายืมเงิน (เงินออกจากเรา)</option>
-        </select>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block text-sm font-medium text-slate-600 mb-1">จำนวนเงิน (บาท)</label>
-          <input type="number" id="amount" required placeholder="0.00" class="w-full p-2.5 border rounded-lg bg-slate-50 outline-none">
+    <div id="authScreen" class="flex-1 flex flex-col justify-between p-6 gradient-bg text-white relative z-10">
+      
+      <div class="pt-8 text-center space-y-3">
+        <div class="w-16 h-16 mx-auto bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-inner">
+          <i data-lucide="wallet" class="w-8 h-8 text-indigo-200"></i>
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-600 mb-1">รายละเอียด / โน้ต</label>
-          <input type="text" id="note" placeholder="เช่น ค่าอาหาร, ยืมค่าน้ำมัน" class="w-full p-2.5 border rounded-lg bg-slate-50 outline-none">
+          <h1 class="text-3xl font-extrabold tracking-tight">WealthFlow</h1>
+          <p class="text-xs text-indigo-200 font-light mt-1">การเงินและยอดหนี้สินอยู่ในมือคุณ</p>
         </div>
       </div>
 
-      <!-- Extra Fields for Borrow/Lend -->
-      <div id="debtFields" class="hidden grid grid-cols-2 gap-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
-        <div>
-          <label class="block text-sm font-medium text-amber-900 mb-1">ชื่อคนที่ยืม/ให้ยืม</label>
-          <input type="text" id="person" placeholder="เช่น ก้อง, นก" class="w-full p-2.5 border rounded-lg bg-white outline-none">
+      <div class="bg-white/95 backdrop-blur-xl text-slate-800 p-6 rounded-3xl shadow-2xl border border-white/50 my-auto">
+        <div class="flex bg-slate-100 p-1 rounded-xl mb-6">
+          <button id="tabLoginBtn" onclick="switchAuthTab('login')" class="flex-1 py-2 text-xs font-semibold rounded-lg bg-white shadow-sm text-indigo-600 transition-all">เข้าสู่ระบบ</button>
+          <button id="tabRegisterBtn" onclick="switchAuthTab('register')" class="flex-1 py-2 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800 transition-all">ลงทะเบียนใหม่</button>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-amber-900 mb-1">วันครบกำหนดคืน</label>
-          <input type="date" id="dueDate" class="w-full p-2.5 border rounded-lg bg-white outline-none">
+
+        <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">ชื่อผู้ใช้งาน (Username)</label>
+            <div class="relative">
+              <i data-lucide="user" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+              <input type="text" id="authUsername" required placeholder="เช่น user1" class="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">รหัสผ่าน (Password)</label>
+            <div class="relative">
+              <i data-lucide="lock" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+              <input type="password" id="authPassword" required placeholder="••••••••" class="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition">
+            </div>
+          </div>
+
+          <div id="rememberRow" class="flex items-center justify-between pt-1">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="rememberMe" checked class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+              <span class="text-xs text-slate-600 font-medium">จดจำการเข้าสู่ระบบไว้</span>
+            </label>
+          </div>
+
+          <button type="submit" id="authSubmitBtn" class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+            <span>เข้าสู่ระบบ</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </form>
+      </div>
+
+      <p class="text-center text-xs text-indigo-200 opacity-80 pb-2">ระบบแยกเก็บข้อมูลปลอดภัยบนอุปกรณ์ของคุณ</p>
+    </div>
+
+
+    <div id="appScreen" class="hidden flex-1 flex flex-col pb-6">
+      
+      <header class="gradient-bg text-white px-5 pt-8 pb-16 rounded-b-[2rem] shadow-lg relative">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 text-white font-bold text-base uppercase" id="avatarLetter">
+              U
+            </div>
+            <div>
+              <p class="text-[10px] text-indigo-200 tracking-wider uppercase font-semibold">ยินดีต้อนรับ</p>
+              <h2 id="displayUsername" class="text-base font-bold">User</h2>
+            </div>
+          </div>
+          <button onclick="logout()" title="ออกจากระบบ" class="w-9 h-9 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center border border-white/20 transition">
+            <i data-lucide="log-out" class="w-4 h-4 text-white"></i>
+          </button>
+        </div>
+
+        <div class="mt-2 text-center">
+          <p class="text-xs text-indigo-200 font-medium">ยอดเงินคงเหลือสุทธิ</p>
+          <p id="totalBalance" class="text-3xl font-extrabold tracking-tight mt-1 text-white">฿0.00</p>
+        </div>
+      </header>
+
+      <div class="px-5 -mt-10 relative z-10 grid grid-cols-2 gap-3 mb-5">
+        <div class="bg-white p-3.5 rounded-2xl shadow-md border border-slate-100 flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-500">
+            <i data-lucide="arrow-down-left" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <p class="text-[11px] text-slate-400 font-medium">เราเป็นหนี้ (ยืม)</p>
+            <p id="totalBorrow" class="text-sm font-bold text-rose-600 mt-0.5">฿0</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-3.5 rounded-2xl shadow-md border border-slate-100 flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-500">
+            <i data-lucide="arrow-up-right" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <p class="text-[11px] text-slate-400 font-medium">เขายืมเรา (ให้ยืม)</p>
+            <p id="totalLend" class="text-sm font-bold text-emerald-600 mt-0.5">฿0</p>
+          </div>
         </div>
       </div>
 
-      <button type="submit" class="w-full bg-slate-800 text-white py-3 rounded-lg font-medium hover:bg-slate-700 transition">บันทึกข้อมูล</button>
-    </form>
-  </div>
+      <div class="px-5 mb-5">
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-600"></i>
+              บันทึกรายการใหม่
+            </h3>
+          </div>
 
-  <!-- Transaction List -->
-  <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-    <h2 class="text-lg font-semibold text-slate-700 mb-4">ประวัติและรายการยืม-คืนเงิน</h2>
-    <div id="list" class="space-y-3"></div>
+          <form id="trackerForm" onsubmit="addTransaction(event)" class="space-y-3">
+            <div class="grid grid-cols-4 gap-1.5 p-1 bg-slate-100 rounded-xl">
+              <button type="button" onclick="setType('income')" id="typeBtn-income" class="py-1.5 text-[11px] font-semibold rounded-lg bg-white shadow-sm text-emerald-600 transition">รายรับ</button>
+              <button type="button" onclick="setType('expense')" id="typeBtn-expense" class="py-1.5 text-[11px] font-semibold rounded-lg text-slate-500 transition">รายจ่าย</button>
+              <button type="button" onclick="setType('borrow')" id="typeBtn-borrow" class="py-1.5 text-[11px] font-semibold rounded-lg text-slate-500 transition">ยืมเงินเขา</button>
+              <button type="button" onclick="setType('lend')" id="typeBtn-lend" class="py-1.5 text-[11px] font-semibold rounded-lg text-slate-500 transition">ให้ยืมเงิน</button>
+            </div>
+            <input type="hidden" id="selectedType" value="income">
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-500 mb-1">จำนวนเงิน</label>
+                <input type="number" id="amount" step="any" required placeholder="0.00" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500">
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-500 mb-1">รายละเอียด / โน้ต</label>
+                <input type="text" id="note" placeholder="เช่น ค่าข้าว, ยืมเพื่อน" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500">
+              </div>
+            </div>
+
+            <div id="debtFields" class="hidden space-y-2 p-3 bg-amber-50/70 rounded-xl border border-amber-200/60">
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] font-semibold text-amber-900 mb-1">ชื่อคนที่ยืม/ให้ยืม</label>
+                  <input type="text" id="person" placeholder="ชื่อบุคคล" class="w-full px-2.5 py-1.5 bg-white border border-amber-200 rounded-lg text-xs outline-none">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-amber-900 mb-1">วันครบกำหนดคืน</label>
+                  <input type="date" id="dueDate" class="w-full px-2 py-1.5 bg-white border border-amber-200 rounded-lg text-xs outline-none">
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="w-full bg-slate-900 text-white font-medium py-2.5 rounded-xl text-xs hover:bg-slate-800 active:scale-[0.99] transition flex items-center justify-center gap-1.5 shadow-sm">
+              <i data-lucide="check" class="w-4 h-4"></i>
+              บันทึกรายการ
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div class="px-5 flex-1 flex flex-col">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-slate-800">ประวัติรายการ</h3>
+          
+          <div class="flex bg-slate-200/70 p-0.5 rounded-lg text-[10px] font-semibold text-slate-600">
+            <button onclick="filterList('all')" id="filterBtn-all" class="px-2.5 py-1 rounded-md bg-white text-slate-800 shadow-xs">ทั้งหมด</button>
+            <button onclick="filterList('cash')" id="filterBtn-cash" class="px-2.5 py-1 rounded-md">รับ-จ่าย</button>
+            <button onclick="filterList('debt')" id="filterBtn-debt" class="px-2.5 py-1 rounded-md">ยืม-คืน</button>
+          </div>
+        </div>
+
+        <div id="transactionList" class="space-y-2.5 flex-1 overflow-y-auto custom-scrollbar pr-0.5">
+          </div>
+      </div>
+
+    </div>
+
   </div>
 
   <script>
-    // Register Service Worker for PWA
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').then(() => {
-        console.log('Service Worker Registered');
-      });
+    // System State Variables
+    let currentAuthMode = 'login';
+    let currentUser = null;
+    let activeFilter = 'all';
+    let transactions = [];
+
+    // Initialize Page
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      checkAuthSession();
+    });
+
+    // Handle Login vs Register Tab Switch
+    function switchAuthTab(mode) {
+      currentAuthMode = mode;
+      const loginBtn = document.getElementById('tabLoginBtn');
+      const regBtn = document.getElementById('tabRegisterBtn');
+      const submitBtn = document.getElementById('authSubmitBtn');
+      const rememberRow = document.getElementById('rememberRow');
+
+      if (mode === 'login') {
+        loginBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-lg bg-white shadow-sm text-indigo-600 transition-all';
+        regBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800 transition-all';
+        submitBtn.querySelector('span').innerText = 'เข้าสู่ระบบ';
+        rememberRow.classList.remove('hidden');
+      } else {
+        regBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-lg bg-white shadow-sm text-indigo-600 transition-all';
+        loginBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800 transition-all';
+        submitBtn.querySelector('span').innerText = 'สร้างบัญชีใหม่';
+        rememberRow.classList.add('hidden');
+      }
     }
 
-    let transactions = JSON.parse(localStorage.getItem('my_transactions')) || [];
+    // Auth Submission Handler
+    function handleAuthSubmit(e) {
+      e.preventDefault();
+      const username = document.getElementById('authUsername').value.trim().toLowerCase();
+      const password = document.getElementById('authPassword').value;
+      const rememberMe = document.getElementById('rememberMe').checked;
 
-    function toggleDebtFields() {
-      const type = document.getElementById('type').value;
+      if (!username || !password) return;
+
+      const usersDB = JSON.parse(localStorage.getItem('wf_users_db')) || {};
+
+      if (currentAuthMode === 'register') {
+        if (usersDB[username]) {
+          alert('ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาใช้ชื่ออื่น');
+          return;
+        }
+        usersDB[username] = { password, createdAt: Date.now() };
+        localStorage.setItem('wf_users_db', JSON.stringify(usersDB));
+        alert('สร้างบัญชีเรียบร้อยแล้ว! กรุณาเข้าสู่ระบบ');
+        switchAuthTab('login');
+      } else {
+        // Login Logic
+        if (!usersDB[username] || usersDB[username].password !== password) {
+          alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+          return;
+        }
+
+        // Save Auth Session
+        if (rememberMe) {
+          localStorage.setItem('wf_active_user', username);
+        } else {
+          sessionStorage.setItem('wf_active_user', username);
+        }
+
+        checkAuthSession();
+      }
+    }
+
+    // Check Login State
+    function checkAuthSession() {
+      const activeUser = localStorage.getItem('wf_active_user') || sessionStorage.getItem('wf_active_user');
+
+      if (activeUser) {
+        currentUser = activeUser;
+        document.getElementById('authScreen').classList.add('hidden');
+        document.getElementById('appScreen').classList.remove('hidden');
+        document.getElementById('displayUsername').innerText = currentUser;
+        document.getElementById('avatarLetter').innerText = currentUser.charAt(0).toUpperCase();
+
+        loadUserData();
+      } else {
+        currentUser = null;
+        document.getElementById('authScreen').classList.remove('hidden');
+        document.getElementById('appScreen').classList.add('hidden');
+      }
+      lucide.createIcons();
+    }
+
+    // Logout Function
+    function logout() {
+      localStorage.removeItem('wf_active_user');
+      sessionStorage.removeItem('wf_active_user');
+      checkAuthSession();
+    }
+
+    // Load User Data Isolatedly
+    function loadUserData() {
+      const userKey = `wf_data_${currentUser}`;
+      transactions = JSON.parse(localStorage.getItem(userKey)) || [];
+      renderApp();
+    }
+
+    // Save Data
+    function saveData() {
+      const userKey = `wf_data_${currentUser}`;
+      localStorage.setItem(userKey, JSON.stringify(transactions));
+      renderApp();
+    }
+
+    // Set Transaction Type
+    function setType(type) {
+      document.getElementById('selectedType').value = type;
       const debtFields = document.getElementById('debtFields');
+
+      ['income', 'expense', 'borrow', 'lend'].forEach(t => {
+        const btn = document.getElementById(`typeBtn-${t}`);
+        if (t === type) {
+          btn.className = `py-1.5 text-[11px] font-semibold rounded-lg bg-white shadow-sm text-${t==='income'||t==='lend'?'emerald':t==='expense'||t==='borrow'?'rose':'indigo'}-600 transition`;
+        } else {
+          btn.className = 'py-1.5 text-[11px] font-semibold rounded-lg text-slate-500 transition';
+        }
+      });
+
       if (type === 'borrow' || type === 'lend') {
         debtFields.classList.remove('hidden');
       } else {
@@ -102,31 +344,43 @@
       }
     }
 
-    document.getElementById('trackerForm').addEventListener('submit', function(e) {
+    // Add Transaction Item
+    function addTransaction(e) {
       e.preventDefault();
-      const type = document.getElementById('type').value;
+      const type = document.getElementById('selectedType').value;
       const amount = parseFloat(document.getElementById('amount').value);
-      const note = document.getElementById('note').value;
-      const person = document.getElementById('person').value;
+      const noteInput = document.getElementById('note').value.trim();
+      const person = document.getElementById('person').value.trim();
       const dueDate = document.getElementById('dueDate').value;
+
+      let defaultNote = noteInput;
+      if (!defaultNote) {
+        if (type === 'income') defaultNote = 'รายรับ';
+        else if (type === 'expense') defaultNote = 'รายจ่าย';
+        else if (type === 'borrow') defaultNote = `ยืมเงิน ${person || 'ไม่ระบุชื่อ'}`;
+        else if (type === 'lend') defaultNote = `ให้ ${person || 'ไม่ระบุชื่อ'} ยืม`;
+      }
 
       const newItem = {
         id: Date.now(),
         type,
         amount,
-        note: note || (type === 'borrow' ? `ยืมเงิน ${person}` : type === 'lend' ? `ให้ ${person} ยืม` : ''),
-        person,
-        dueDate,
+        note: defaultNote,
+        person: person || null,
+        dueDate: dueDate || null,
         status: (type === 'borrow' || type === 'lend') ? 'pending' : 'completed',
-        date: new Date().toLocaleDateString('th-TH')
+        date: new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })
       };
 
       transactions.unshift(newItem);
-      saveAndRender();
-      this.reset();
-      toggleDebtFields();
-    });
+      saveData();
 
+      // Reset Form
+      document.getElementById('trackerForm').reset();
+      setType('income');
+    }
+
+    // Toggle Paid/Pending Status for Debts
     function toggleStatus(id) {
       transactions = transactions.map(item => {
         if (item.id === id) {
@@ -134,71 +388,135 @@
         }
         return item;
       });
-      saveAndRender();
+      saveData();
     }
 
+    // Delete Item
     function deleteItem(id) {
-      transactions = transactions.filter(item => item.id !== id);
-      saveAndRender();
+      if (confirm('ต้องการลบรายการนี้ใช่หรือไม่?')) {
+        transactions = transactions.filter(item => item.id !== id);
+        saveData();
+      }
     }
 
-    function saveAndRender() {
-      localStorage.setItem('my_transactions', JSON.stringify(transactions));
-      
-      let balance = 0, totalBorrow = 0, totalLend = 0;
+    // Filter List View
+    function filterList(filter) {
+      activeFilter = filter;
+      ['all', 'cash', 'debt'].forEach(f => {
+        const btn = document.getElementById(`filterBtn-${f}`);
+        if (f === filter) {
+          btn.className = 'px-2.5 py-1 rounded-md bg-white text-slate-800 shadow-xs font-semibold';
+        } else {
+          btn.className = 'px-2.5 py-1 rounded-md text-slate-500 font-normal';
+        }
+      });
+      renderApp();
+    }
 
-      const listEl = document.getElementById('list');
+    // Render Main UI Dashboard
+    function renderApp() {
+      let balance = 0;
+      let totalBorrow = 0;
+      let totalLend = 0;
+
+      const listEl = document.getElementById('transactionList');
       listEl.innerHTML = '';
 
-      if (transactions.length === 0) {
-        listEl.innerHTML = '<p class="text-center text-slate-400 py-4">ยังไม่มีข้อมูล</p>';
-      }
+      const filteredItems = transactions.filter(item => {
+        if (activeFilter === 'cash') return item.type === 'income' || item.type === 'expense';
+        if (activeFilter === 'debt') return item.type === 'borrow' || item.type === 'lend';
+        return true;
+      });
 
+      // Calculate Balance & Totals
       transactions.forEach(item => {
         if (item.type === 'income' || item.type === 'borrow') balance += item.amount;
         if (item.type === 'expense' || item.type === 'lend') balance -= item.amount;
 
         if (item.type === 'borrow' && item.status === 'pending') totalBorrow += item.amount;
         if (item.type === 'lend' && item.status === 'pending') totalLend += item.amount;
+      });
 
-        const isDebt = item.type === 'borrow' || item.type === 'lend';
-        const card = document.createElement('div');
-        card.className = `p-3 rounded-lg border flex items-center justify-between ${
-          item.type === 'income' ? 'bg-emerald-50 border-emerald-200' :
-          item.type === 'expense' ? 'bg-rose-50 border-rose-200' : 'bg-amber-50 border-amber-200'
-        }`;
+      document.getElementById('totalBalance').innerText = `฿${balance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('totalBorrow').innerText = `฿${totalBorrow.toLocaleString()}`;
+      document.getElementById('totalLend').innerText = `฿${totalLend.toLocaleString()}`;
 
-        card.innerHTML = `
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="font-semibold text-slate-800">${item.note}</span>
-              ${isDebt ? `
-                <span class="text-xs px-2 py-0.5 rounded-full ${item.status === 'paid' ? 'bg-emerald-200 text-emerald-800' : 'bg-rose-200 text-rose-800'}">
-                  ${item.status === 'paid' ? 'คืนแล้ว' : 'ยังไม่คืน'}
-                </span>
-              ` : ''}
-            </div>
-            <p class="text-xs text-slate-500">
-              ${item.date} ${item.person ? `• ชื่อ: ${item.person}` : ''} ${item.dueDate ? `• กำหนด: ${item.dueDate}` : ''}
-            </p>
-          </div>
-          <div class="text-right flex items-center gap-3">
-            <span class="font-bold ${item.type === 'income' || item.type === 'borrow' ? 'text-emerald-600' : 'text-rose-600'}">
-              ${item.type === 'income' || item.type === 'borrow' ? '+' : '-'}฿${item.amount.toLocaleString()}
-            </span>
-            ${isDebt ? `<button onclick="toggleStatus(${item.id})" class="text-xs bg-white border border-slate-300 px-2 py-1 rounded hover:bg-slate-100">เปลี่ยนสถานะ</button>` : ''}
-            <button onclick="deleteItem(${item.id})" class="text-xs text-rose-500 hover:underline">ลบ</button>
+      // Empty State
+      if (filteredItems.length === 0) {
+        listEl.innerHTML = `
+          <div class="text-center py-8 text-slate-400">
+            <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+            <p class="text-xs">ยังไม่มีรายการบันทึก</p>
           </div>
         `;
+        lucide.createIcons();
+        return;
+      }
+
+      // Render Cards
+      filteredItems.forEach(item => {
+        const isDebt = item.type === 'borrow' || item.type === 'lend';
+        const isPositive = item.type === 'income' || item.type === 'borrow';
+        
+        let iconName = 'arrow-down-left';
+        let iconBg = 'bg-emerald-50 text-emerald-600 border-emerald-100';
+
+        if (item.type === 'expense') {
+          iconName = 'arrow-up-right';
+          iconBg = 'bg-rose-50 text-rose-600 border-rose-100';
+        } else if (item.type === 'borrow') {
+          iconName = 'hand-coins';
+          iconBg = 'bg-amber-50 text-amber-600 border-amber-100';
+        } else if (item.type === 'lend') {
+          iconName = 'send';
+          iconBg = 'bg-indigo-50 text-indigo-600 border-indigo-100';
+        }
+
+        const card = document.createElement('div');
+        card.className = 'bg-white p-3 rounded-2xl shadow-2xs border border-slate-100 flex items-center justify-between hover:border-slate-200 transition';
+
+        card.innerHTML = `
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl border ${iconBg} flex items-center justify-center shrink-0">
+              <i data-lucide="${iconName}" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs font-semibold text-slate-800">${item.note}</span>
+                ${isDebt ? `
+                  <span onclick="toggleStatus(${item.id})" class="cursor-pointer text-[9px] px-1.5 py-0.5 rounded-md font-bold ${item.status === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
+                    ${item.status === 'paid' ? 'ชำระแล้ว' : 'ค้างชำระ'}
+                  </span>
+                ` : ''}
+              </div>
+              <p class="text-[10px] text-slate-400 mt-0.5">
+                ${item.date} ${item.person ? `• ${item.person}` : ''} ${item.dueDate ? `• ครบกำหนด: ${item.dueDate}` : ''}
+              </p>
+            </div>
+          </div>
+
+          <div class="text-right flex items-center gap-2">
+            <div>
+              <span class="text-xs font-bold ${isPositive ? 'text-emerald-600' : 'text-slate-800'}">
+                ${isPositive ? '+' : '-'}฿${item.amount.toLocaleString()}
+              </span>
+            </div>
+            <button onclick="deleteItem(${item.id})" class="text-slate-300 hover:text-rose-500 p-1 transition">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
+
         listEl.appendChild(card);
       });
 
-      document.getElementById('totalBalance').innerText = `฿${balance.toLocaleString()}`;
-      document.getElementById('totalBorrow').innerText = `฿${totalBorrow.toLocaleString()}`;
-      document.getElementById('totalLend').innerText = `฿${totalLend.toLocaleString()}`;
+      lucide.createIcons();
     }
 
-    saveAndRender();
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
   </script>
 </body>
 </html>
