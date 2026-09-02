@@ -1,19 +1,19 @@
 {
-  "name": "Money & Debt Tracker",
-  "short_name": "MoneyTracker",
-  "description": "แอปบันทึกรายรับ-รายจ่าย และยืม-คืนเงิน",
+  "name": "WealthFlow Pro",
+  "short_name": "WealthFlow",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f1f5f9",
-  "theme_color": "#0f172a",
+  "orientation": "portrait",
+  "background_color": "#1e293b",
+  "theme_color": "#334155",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/2489/2489756.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/2953/2953361.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/2489/2489756.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/2953/2953361.png",
       "sizes": "512x512",
       "type": "image/png"
     }
