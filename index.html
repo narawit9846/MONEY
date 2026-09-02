@@ -1,21 +1,968 @@
-{
-  "name": "WealthFlow Pro",
-  "short_name": "WealthFlow",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#1e293b",
-  "theme_color": "#334155",
-  "icons": [
-    {
-      "src": "https://cdn-icons-png.flaticon.com/512/2953/2953361.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "https://cdn-icons-png.flaticon.com/512/2953/2953361.png",
-      "sizes": "512x512",
-      "type": "image/png"
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <!-- ล็อกสเกลหน้าจอ ป้องกันการซูมและการปรับขนาดเมื่อหมุนจอ -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>WealthFlow — Smart Personal Finance</title>
+
+  <!-- Manifest & Theme -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#334155">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="screen-orientation" content="portrait">
+
+  <!-- Fonts, Tailwind, Lucide & Chart.js -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* ป้องกันการ Pull-to-Refresh และล็อกไม่ให้จอดึงเด้งบนมือถือ */
+    html, body {
+      overscroll-behavior: none;
+      overscroll-behavior-y: none;
+      touch-action: manipulation;
     }
-  ]
-}
+
+    body { font-family: 'Plus Jakarta Sans', 'Sarabun', sans-serif; }
+    .comfort-gradient { background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%); }
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-slate-900 min-h-screen text-slate-800 antialiased selection:bg-slate-600 selection:text-white">
+
+  <div class="max-w-md mx-auto min-h-screen bg-slate-50 flex flex-col shadow-2xl relative overflow-hidden">
+
+    <!-- ==================== SCREEN 1: AUTHENTICATION ==================== -->
+    <div id="authScreen" class="flex-1 flex flex-col justify-between p-6 comfort-gradient text-white relative z-10">
+      <div class="flex justify-end pt-2">
+        <button onclick="toggleLanguage()" class="bg-white/10 hover:bg-white/20 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md border border-white/20 transition flex items-center gap-1.5">
+          <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+          <span id="langLabel">TH | EN</span>
+        </button>
+      </div>
+
+      <div class="text-center space-y-2 py-4">
+        <div class="w-16 h-16 mx-auto bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-sm">
+          <i data-lucide="wallet" class="w-8 h-8 text-teal-300"></i>
+        </div>
+        <h1 class="text-2xl font-extrabold tracking-tight">WealthFlow Pro</h1>
+        <p class="text-xs text-slate-300 font-light" data-i18n="appSubtitle">การเงินและหนี้สิน จัดการง่ายสบายตา</p>
+      </div>
+
+      <div class="bg-white/95 backdrop-blur-xl text-slate-800 p-6 rounded-3xl shadow-xl border border-white/40 my-auto">
+        <div class="flex bg-slate-100 p-1 rounded-xl mb-5">
+          <button id="tabLoginBtn" onclick="switchAuthTab('login')" class="flex-1 py-2 text-xs font-semibold rounded-lg bg-white shadow-xs text-slate-800 transition-all" data-i18n="loginTab">เข้าสู่ระบบ</button>
+          <button id="tabRegisterBtn" onclick="switchAuthTab('register')" class="flex-1 py-2 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800 transition-all" data-i18n="registerTab">ลงทะเบียน</button>
+        </div>
+
+        <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-3.5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="usernameLabel">ชื่อผู้ใช้งาน</label>
+            <div class="relative">
+              <i data-lucide="user" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+              <input type="text" id="authUsername" required placeholder="Username" class="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none transition">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="passwordLabel">รหัสผ่าน</label>
+            <div class="relative">
+              <i data-lucide="lock" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+              <input type="password" id="authPassword" required placeholder="••••••••" class="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none transition">
+            </div>
+          </div>
+
+          <div id="confirmPasswordRow" class="hidden">
+            <label class="block text-xs font-semibold text-slate-600 mb-1" data-i18n="confirmPasswordLabel">ยืนยันรหัสผ่าน</label>
+            <div class="relative">
+              <i data-lucide="shield-check" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+              <input type="password" id="authConfirmPassword" placeholder="••••••••" class="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none transition">
+            </div>
+          </div>
+
+          <div id="rememberRow" class="flex items-center justify-between pt-1">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="rememberMe" checked class="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500">
+              <span class="text-xs text-slate-600 font-medium" data-i18n="rememberMe">จดจำการเข้าสู่ระบบ</span>
+            </label>
+          </div>
+
+          <button type="submit" id="authSubmitBtn" class="w-full bg-slate-800 text-white font-semibold py-3 rounded-xl shadow-md hover:bg-slate-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-2">
+            <span data-i18n="loginBtn">เข้าสู่ระบบ</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </form>
+      </div>
+
+      <p class="text-center text-xs text-slate-300 opacity-80 pb-2" data-i18n="privacyNote">ข้อมูลจัดเก็บปลอดภัยบนเครื่องของคุณ</p>
+    </div>
+
+
+    <!-- ==================== SCREEN 2: PIN LOCK SCREEN ==================== -->
+    <div id="pinScreen" class="hidden flex-1 flex flex-col justify-center items-center p-6 comfort-gradient text-white relative z-20">
+      <div class="text-center space-y-3 mb-6">
+        <div class="w-16 h-16 mx-auto bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20">
+          <i data-lucide="lock" class="w-8 h-8 text-teal-300"></i>
+        </div>
+        <h2 class="text-xl font-bold" data-i18n="enterPinTitle">กรุณาใส่รหัส PIN 4 หลัก</h2>
+        <p class="text-xs text-slate-300" data-i18n="pinSub">เพื่อเข้าใช้งานแอปความปลอดภัย</p>
+      </div>
+
+      <div class="flex gap-3 mb-8">
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="pin1" class="pin-input w-12 h-14 bg-white/10 border border-white/30 rounded-2xl text-center text-xl font-bold text-white outline-none focus:border-teal-400">
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="pin2" class="pin-input w-12 h-14 bg-white/10 border border-white/30 rounded-2xl text-center text-xl font-bold text-white outline-none focus:border-teal-400">
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="pin3" class="pin-input w-12 h-14 bg-white/10 border border-white/30 rounded-2xl text-center text-xl font-bold text-white outline-none focus:border-teal-400">
+        <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="pin4" class="pin-input w-12 h-14 bg-white/10 border border-white/30 rounded-2xl text-center text-xl font-bold text-white outline-none focus:border-teal-400">
+      </div>
+
+      <button onclick="verifyPin()" class="bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold px-8 py-3 rounded-xl shadow-lg transition">
+        <span data-i18n="unlockBtn">ปลดล็อก</span>
+      </button>
+    </div>
+
+
+    <!-- ==================== SCREEN 3: MAIN DASHBOARD ==================== -->
+    <div id="appScreen" class="hidden flex-1 flex flex-col pb-6 overflow-y-auto custom-scrollbar">
+      
+      <!-- Top Header Bar -->
+      <header class="comfort-gradient text-white px-5 pt-6 pb-14 rounded-b-[2rem] shadow-md relative">
+        <div class="flex items-center justify-between mb-4">
+          <button onclick="openProfileModal()" class="flex items-center gap-3 group text-left">
+            <div id="userAvatarBox" class="w-10 h-10 rounded-full bg-slate-700 border-2 border-white/30 overflow-hidden flex items-center justify-center text-white font-bold text-sm shadow-sm group-hover:border-teal-300 transition">
+              <span id="avatarLetter">U</span>
+            </div>
+            <div>
+              <p class="text-[10px] text-slate-300 tracking-wider uppercase font-semibold" data-i18n="welcomeBack">ยินดีต้อนรับ</p>
+              <h2 id="displayUsername" class="text-sm font-bold flex items-center gap-1 group-hover:text-teal-200 transition">
+                <span>User</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 opacity-70"></i>
+              </h2>
+            </div>
+          </button>
+
+          <div class="flex items-center gap-2">
+            <button onclick="lockWithPin()" id="lockBtn" class="hidden w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center border border-white/20 transition">
+              <i data-lucide="lock" class="w-4 h-4 text-teal-300"></i>
+            </button>
+            <button onclick="toggleLanguage()" class="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center border border-white/20 text-xs font-bold transition">
+              <span id="appLangLabel">TH</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-1 text-center">
+          <p class="text-xs text-slate-300 font-medium" data-i18n="netBalance">ยอดเงินคงเหลือสุทธิ</p>
+          <p id="totalBalance" class="text-3xl font-extrabold tracking-tight mt-1 text-white">฿0.00</p>
+        </div>
+      </header>
+
+      <!-- Dashboard Cards -->
+      <div class="px-5 -mt-8 relative z-10 space-y-3 mb-4">
+        <!-- Debts Stats -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-500 shrink-0">
+              <i data-lucide="arrow-down-left" class="w-5 h-5"></i>
+            </div>
+            <div class="min-w-0">
+              <p class="text-[10px] text-slate-400 font-medium truncate" data-i18n="totalBorrow">หนี้สินสะสม (ยืม)</p>
+              <p id="totalBorrow" class="text-xs font-bold text-rose-600 mt-0.5">฿0</p>
+            </div>
+          </div>
+
+          <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600 shrink-0">
+              <i data-lucide="arrow-up-right" class="w-5 h-5"></i>
+            </div>
+            <div class="min-w-0">
+              <p class="text-[10px] text-slate-400 font-medium truncate" data-i18n="totalLend">ลูกหนี้ค้างชำระ (ให้ยืม)</p>
+              <p id="totalLend" class="text-xs font-bold text-teal-600 mt-0.5">฿0</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly Budget Limit Card -->
+        <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 space-y-2">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-bold text-slate-700 flex items-center gap-1.5">
+              <i data-lucide="pie-chart" class="w-4 h-4 text-slate-500"></i>
+              <span data-i18n="monthlyBudget">งบประมาณเดือนนี้</span>
+            </span>
+            <span id="budgetText" class="font-semibold text-slate-500 text-[11px]">฿0 / ฿0</span>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+            <div id="budgetBar" class="bg-teal-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Action Form -->
+      <div class="px-5 mb-4">
+        <div class="bg-white p-4 rounded-2xl shadow-xs border border-slate-200/70">
+          <h3 class="text-xs font-bold text-slate-800 mb-3 flex items-center gap-2">
+            <i data-lucide="plus-circle" class="w-4 h-4 text-teal-600"></i>
+            <span data-i18n="addTransactionTitle">เพิ่มรายการธุรกรรมใหม่</span>
+          </h3>
+
+          <form id="trackerForm" onsubmit="addTransaction(event)" class="space-y-3">
+            <div class="grid grid-cols-4 gap-1 p-1 bg-slate-100/80 rounded-xl text-center">
+              <button type="button" onclick="setType('income')" id="typeBtn-income" class="py-1.5 text-[11px] font-semibold rounded-lg bg-white shadow-xs text-teal-600 transition" data-i18n="typeIncome">รายรับ</button>
+              <button type="button" onclick="setType('expense')" id="typeBtn-expense" class="py-1.5 text-[11px] font-semibold rounded-lg text-slate-500 transition" data-i18n="typeExpense">รายจ่าย</button>
+              <button type="button" onclick="setType('borrow')" id="typeBtn-borrow" class="py-1.5 text-[11px] font-semibold rounded-lg text-slate-500 transition" data-i18n="typeBorrow">ยืมเงินเขา</button>
+              <button type="button" onclick="setType('lend')" id="typeBtn-lend" class="py-1.5 text-[11px] font-semibold rounded-lg text-slate-500 transition" data-i18n="typeLend">ให้ยืมเงิน</button>
+            </div>
+            <input type="hidden" id="selectedType" value="income">
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-500 mb-1" data-i18n="categoryLabel">หมวดหมู่</label>
+                <select id="categorySelect" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:bg-white focus:ring-2 focus:ring-teal-500">
+                  <option value="Food">🍔 อาหาร (Food)</option>
+                  <option value="Travel">🚗 เดินทาง (Travel)</option>
+                  <option value="Shopping">🛍️ ช้อปปิ้ง (Shopping)</option>
+                  <option value="Bills">💡 ค่าน้ำ/ไฟ/บ้าน (Bills)</option>
+                  <option value="Other">📦 อื่นๆ (Other)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-500 mb-1" data-i18n="amountLabel">จำนวนเงิน</label>
+                <input type="number" id="amount" step="any" required placeholder="0.00" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-teal-500">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-500 mb-1" data-i18n="noteLabel">บันทึกเพิ่มเติม</label>
+              <input type="text" id="note" placeholder="..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-teal-500">
+            </div>
+
+            <div id="debtFields" class="hidden space-y-2 p-3 bg-amber-50/60 rounded-xl border border-amber-200/50">
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-[11px] font-semibold text-amber-900 mb-1" data-i18n="personLabel">ชื่อบุคคล</label>
+                  <input type="text" id="person" placeholder="..." class="w-full px-2.5 py-1.5 bg-white border border-amber-200 rounded-lg text-xs outline-none">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-amber-900 mb-1" data-i18n="dueDateLabel">วันครบกำหนด</label>
+                  <input type="date" id="dueDate" class="w-full px-2 py-1.5 bg-white border border-amber-200 rounded-lg text-xs outline-none">
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="w-full bg-slate-800 text-white font-medium py-2.5 rounded-xl text-xs hover:bg-slate-700 active:scale-[0.99] transition flex items-center justify-center gap-1.5 shadow-sm">
+              <i data-lucide="check" class="w-4 h-4"></i>
+              <span data-i18n="saveBtn">บันทึกรายการ</span>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Expense Analysis Section (Chart) -->
+      <div class="px-5 mb-4">
+        <div class="bg-white p-4 rounded-2xl shadow-xs border border-slate-100">
+          <h3 class="text-xs font-bold text-slate-800 mb-2 flex items-center gap-1.5">
+            <i data-lucide="bar-chart-3" class="w-4 h-4 text-teal-600"></i>
+            <span data-i18n="expenseAnalytics">วิเคราะห์สัดส่วนรายจ่าย</span>
+          </h3>
+          <div class="h-44 w-full relative flex items-center justify-center">
+            <canvas id="expenseChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter & Transaction History -->
+      <div class="px-5 flex-1 flex flex-col">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-xs font-bold text-slate-800" data-i18n="historyTitle">ประวัติรายการ</h3>
+          
+          <div class="flex bg-slate-200/60 p-0.5 rounded-lg text-[10px] font-semibold text-slate-600">
+            <button onclick="filterList('all')" id="filterBtn-all" class="px-2.5 py-1 rounded-md bg-white text-slate-800 shadow-xs" data-i18n="filterAll">ทั้งหมด</button>
+            <button onclick="filterList('cash')" id="filterBtn-cash" class="px-2.5 py-1 rounded-md" data-i18n="filterCash">รับ-จ่าย</button>
+            <button onclick="filterList('debt')" id="filterBtn-debt" class="px-2.5 py-1 rounded-md" data-i18n="filterDebt">ยืม-คืน</button>
+          </div>
+        </div>
+
+        <div id="transactionList" class="space-y-2 flex-1"></div>
+      </div>
+
+    </div>
+
+
+    <!-- ==================== MODAL: PROFILE & SETTINGS ==================== -->
+    <div id="profileModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 transition-opacity">
+      <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h3 class="text-base font-bold text-slate-800" data-i18n="profileSettingsTitle">การตั้งค่าและสำรองข้อมูล</h3>
+          <button onclick="closeProfileModal()" class="text-slate-400 hover:text-slate-600 p-1">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Avatar Section -->
+        <div class="flex items-center gap-4 py-1">
+          <div id="modalAvatarPreview" class="w-14 h-14 rounded-full bg-slate-100 border-2 border-slate-200 overflow-hidden flex items-center justify-center text-slate-500 font-bold text-xl shrink-0">
+            <span id="modalAvatarLetter">U</span>
+          </div>
+          <div>
+            <label class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-xl transition inline-flex items-center gap-1.5">
+              <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+              <span data-i18n="changeAvatarBtn">เปลี่ยนรูปโปรไฟล์</span>
+              <input type="file" id="avatarInput" accept="image/*" onchange="uploadAvatar(event)" class="hidden">
+            </label>
+          </div>
+        </div>
+
+        <!-- Monthly Budget Setting -->
+        <div class="pt-2 border-t border-slate-100 space-y-2">
+          <h4 class="text-xs font-bold text-slate-700" data-i18n="setBudgetHeader">ตั้งงบประมาณรายจ่ายประจำเดือน</h4>
+          <div class="flex gap-2">
+            <input type="number" id="budgetInput" placeholder="15000" class="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none">
+            <button onclick="saveBudgetSetting()" class="bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-medium" data-i18n="saveBtn">บันทึก</button>
+          </div>
+        </div>
+
+        <!-- Set Security PIN Code -->
+        <div class="pt-2 border-t border-slate-100 space-y-2">
+          <h4 class="text-xs font-bold text-slate-700" data-i18n="setPinHeader">รหัสความปลอดภัย PIN (4 หลัก)</h4>
+          <div class="flex gap-2">
+            <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="newPinInput" placeholder="1234" class="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none">
+            <button onclick="savePinSetting()" class="bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-medium" data-i18n="saveBtn">บันทึก PIN</button>
+          </div>
+        </div>
+
+        <!-- Backup & Restore Data -->
+        <div class="pt-2 border-t border-slate-100 space-y-2">
+          <h4 class="text-xs font-bold text-slate-700" data-i18n="backupHeader">สำรองและป้องกันข้อมูลหาย</h4>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="exportData()" class="bg-teal-50 border border-teal-200 text-teal-700 font-semibold py-2 rounded-xl text-xs hover:bg-teal-100 transition flex items-center justify-center gap-1">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              <span data-i18n="exportBtn">ส่งออกไฟล์ (.json)</span>
+            </button>
+            <label class="cursor-pointer bg-slate-100 border border-slate-200 text-slate-700 font-semibold py-2 rounded-xl text-xs hover:bg-slate-200 transition flex items-center justify-center gap-1">
+              <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+              <span data-i18n="importBtn">นำเข้าไฟล์</span>
+              <input type="file" accept=".json" onchange="importData(event)" class="hidden">
+            </label>
+          </div>
+        </div>
+
+        <!-- Change Password Form -->
+        <form onsubmit="handleChangePassword(event)" class="space-y-2 pt-2 border-t border-slate-100">
+          <h4 class="text-xs font-bold text-slate-700" data-i18n="changePasswordHeader">เปลี่ยนรหัสผ่าน</h4>
+          <input type="password" id="oldPassword" required placeholder="รหัสผ่านปัจจุบัน" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none">
+          <input type="password" id="newPassword" required placeholder="รหัสผ่านใหม่" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none">
+          <input type="password" id="confirmNewPassword" required placeholder="ยืนยันรหัสผ่านใหม่" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none">
+          <button type="submit" class="w-full bg-slate-800 text-white font-medium py-2 rounded-xl text-xs hover:bg-slate-700 transition" data-i18n="updatePasswordBtn">อัปเดตรหัสผ่าน</button>
+        </form>
+
+        <div class="pt-2 border-t border-slate-100">
+          <button onclick="logout()" class="w-full bg-rose-50 text-rose-600 hover:bg-rose-100 font-semibold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+            <span data-i18n="logoutBtn">ออกจากระบบ</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ==================== MODAL: PARTIAL REPAYMENT ==================== -->
+    <div id="repayModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-4">
+        <h3 class="text-sm font-bold text-slate-800" data-i18n="repayTitle">บันทึกการทยอยชำระคืน</h3>
+        <p id="repaySubText" class="text-xs text-slate-500">ยอดค้างชำระคงเหลือ: ฿0</p>
+        <input type="number" id="repayAmount" step="any" placeholder="จำนวนเงินที่ชำระ" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-teal-500">
+        <div class="flex gap-2">
+          <button onclick="closeRepayModal()" class="flex-1 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-semibold" data-i18n="cancelBtn">ยกเลิก</button>
+          <button onclick="submitRepay()" class="flex-1 py-2 bg-teal-600 text-white rounded-xl text-xs font-semibold" data-i18n="confirmBtn">บันทึกชำระ</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const i18n = {
+      th: {
+        appSubtitle: "การเงินและหนี้สิน จัดการง่ายสบายตา",
+        loginTab: "เข้าสู่ระบบ", registerTab: "ลงทะเบียน", usernameLabel: "ชื่อผู้ใช้งาน",
+        passwordLabel: "รหัสผ่าน", confirmPasswordLabel: "ยืนยันรหัสผ่าน", rememberMe: "จดจำการเข้าสู่ระบบ",
+        loginBtn: "เข้าสู่ระบบ", registerSubmitBtn: "ลงทะเบียนใหม่", privacyNote: "ข้อมูลจัดเก็บปลอดภัยบนเครื่องของคุณ",
+        welcomeBack: "ยินดีต้อนรับ", netBalance: "ยอดเงินคงเหลือสุทธิ", totalBorrow: "หนี้สินสะสม (ยืม)",
+        totalLend: "ลูกหนี้ค้างชำระ (ให้ยืม)", addTransactionTitle: "เพิ่มรายการธุรกรรมใหม่",
+        typeIncome: "รายรับ", typeExpense: "รายจ่าย", typeBorrow: "ยืมเงินเขา", typeLend: "ให้ยืมเงิน",
+        amountLabel: "จำนวนเงิน", categoryLabel: "หมวดหมู่", noteLabel: "บันทึกเพิ่มเติม",
+        personLabel: "ชื่อบุคคล", dueDateLabel: "วันครบกำหนด", saveBtn: "บันทึกรายการ",
+        historyTitle: "ประวัติรายการ", filterAll: "ทั้งหมด", filterCash: "รับ-จ่าย", filterDebt: "ยืม-คืน",
+        profileSettingsTitle: "การตั้งค่าและสำรองข้อมูล", changeAvatarBtn: "เปลี่ยนรูปโปรไฟล์",
+        changePasswordHeader: "เปลี่ยนรหัสผ่าน", updatePasswordBtn: "อัปเดตรหัสผ่าน", logoutBtn: "ออกจากระบบ",
+        monthlyBudget: "งบประมาณเดือนนี้", setBudgetHeader: "ตั้งงบประมาณรายจ่ายประจำเดือน",
+        setPinHeader: "รหัสความปลอดภัย PIN (4 หลัก)", backupHeader: "สำรองและป้องกันข้อมูลหาย",
+        exportBtn: "ส่งออกไฟล์ (.json)", importBtn: "นำเข้าไฟล์", expenseAnalytics: "วิเคราะห์สัดส่วนรายจ่าย",
+        enterPinTitle: "กรุณาใส่รหัส PIN 4 หลัก", pinSub: "เพื่อเข้าใช้งานแอปอย่างปลอดภัย", unlockBtn: "ปลดล็อก",
+        repayTitle: "บันทึกการทยอยชำระคืน", cancelBtn: "ยกเลิก", confirmBtn: "บันทึกชำระ",
+        paid: "ชำระครบแล้ว", pending: "ค้างชำระ", empty: "ยังไม่มีรายการบันทึก"
+      },
+      en: {
+        appSubtitle: "Simple & Clean Financial Tracking",
+        loginTab: "Log In", registerTab: "Register", usernameLabel: "Username",
+        passwordLabel: "Password", confirmPasswordLabel: "Confirm Password", rememberMe: "Remember Me",
+        loginBtn: "Log In", registerSubmitBtn: "Create Account", privacyNote: "Data stored securely on your device",
+        welcomeBack: "Welcome back", netBalance: "Net Balance", totalBorrow: "Total Borrowed",
+        totalLend: "Total Lent", addTransactionTitle: "New Transaction",
+        typeIncome: "Income", typeExpense: "Expense", typeBorrow: "Borrow", typeLend: "Lend",
+        amountLabel: "Amount", categoryLabel: "Category", noteLabel: "Note",
+        personLabel: "Person Name", dueDateLabel: "Due Date", saveBtn: "Save Transaction",
+        historyTitle: "Transaction History", filterAll: "All", filterCash: "Cashflow", filterDebt: "Debts",
+        profileSettingsTitle: "Profile & Backup Settings", changeAvatarBtn: "Change Avatar",
+        changePasswordHeader: "Change Password", updatePasswordBtn: "Update Password", logoutBtn: "Log Out",
+        monthlyBudget: "Monthly Budget", setBudgetHeader: "Set Monthly Expense Budget",
+        setPinHeader: "Security PIN Code (4 Digits)", backupHeader: "Backup & Restore Data",
+        exportBtn: "Export (.json)", importBtn: "Import File", expenseAnalytics: "Expense Analytics",
+        enterPinTitle: "Enter 4-Digit PIN", pinSub: "To access your finance app", unlockBtn: "Unlock",
+        repayTitle: "Partial Repayment", cancelBtn: "Cancel", confirmBtn: "Confirm Pay",
+        paid: "Paid", pending: "Pending", empty: "No transactions found"
+      }
+    };
+
+    let currentLang = localStorage.getItem('wf_lang') || 'th';
+    let currentAuthMode = 'login';
+    let currentUser = null;
+    let activeFilter = 'all';
+    let transactions = [];
+    let activeRepayId = null;
+    let chartInstance = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      updateLanguageUI();
+      checkAuthSession();
+      setupPinInputs();
+      lucide.createIcons();
+    });
+
+    function toggleLanguage() {
+      currentLang = currentLang === 'th' ? 'en' : 'th';
+      localStorage.setItem('wf_lang', currentLang);
+      updateLanguageUI();
+      renderApp();
+    }
+
+    function updateLanguageUI() {
+      document.getElementById('langLabel').innerText = currentLang === 'th' ? 'TH | EN' : 'EN | TH';
+      document.getElementById('appLangLabel').innerText = currentLang.toUpperCase();
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (i18n[currentLang][key]) el.innerText = i18n[currentLang][key];
+      });
+    }
+
+    function switchAuthTab(mode) {
+      currentAuthMode = mode;
+      const loginBtn = document.getElementById('tabLoginBtn');
+      const regBtn = document.getElementById('tabRegisterBtn');
+      const submitBtn = document.getElementById('authSubmitBtn');
+      const confirmRow = document.getElementById('confirmPasswordRow');
+      const rememberRow = document.getElementById('rememberRow');
+
+      if (mode === 'login') {
+        loginBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-lg bg-white shadow-xs text-slate-800 transition-all';
+        regBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-lg text-slate-500 transition-all';
+        submitBtn.querySelector('span').innerText = i18n[currentLang].loginBtn;
+        confirmRow.classList.add('hidden');
+        rememberRow.classList.remove('hidden');
+      } else {
+        regBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-lg bg-white shadow-xs text-slate-800 transition-all';
+        loginBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-lg text-slate-500 transition-all';
+        submitBtn.querySelector('span').innerText = i18n[currentLang].registerSubmitBtn;
+        confirmRow.classList.remove('hidden');
+        rememberRow.classList.add('hidden');
+      }
+    }
+
+    function handleAuthSubmit(e) {
+      e.preventDefault();
+      const username = document.getElementById('authUsername').value.trim().toLowerCase();
+      const password = document.getElementById('authPassword').value;
+      const confirmPassword = document.getElementById('authConfirmPassword').value;
+      const rememberMe = document.getElementById('rememberMe').checked;
+
+      const usersDB = JSON.parse(localStorage.getItem('wf_users_db')) || {};
+
+      if (currentAuthMode === 'register') {
+        if (password !== confirmPassword) {
+          alert(currentLang === 'th' ? 'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน' : 'Passwords do not match');
+          return;
+        }
+        if (usersDB[username]) {
+          alert(currentLang === 'th' ? 'ชื่อผู้ใช้นี้ถูกใช้งานแล้ว' : 'Username already exists');
+          return;
+        }
+        usersDB[username] = { password, avatar: null, pin: null, budget: 15000 };
+        localStorage.setItem('wf_users_db', JSON.stringify(usersDB));
+        alert(currentLang === 'th' ? 'สร้างบัญชีเรียบร้อยแล้ว!' : 'Account created!');
+        switchAuthTab('login');
+      } else {
+        if (!usersDB[username] || usersDB[username].password !== password) {
+          alert(currentLang === 'th' ? 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' : 'Invalid credentials');
+          return;
+        }
+        if (rememberMe) localStorage.setItem('wf_active_user', username);
+        else sessionStorage.setItem('wf_active_user', username);
+        
+        currentUser = username;
+        checkPinStatusAndProceed();
+      }
+    }
+
+    function checkAuthSession() {
+      const activeUser = localStorage.getItem('wf_active_user') || sessionStorage.getItem('wf_active_user');
+      if (activeUser) {
+        currentUser = activeUser;
+        checkPinStatusAndProceed();
+      } else {
+        showScreen('authScreen');
+      }
+    }
+
+    function checkPinStatusAndProceed() {
+      const usersDB = JSON.parse(localStorage.getItem('wf_users_db')) || {};
+      const userData = usersDB[currentUser];
+
+      if (userData && userData.pin) {
+        showScreen('pinScreen');
+        document.getElementById('lockBtn').classList.remove('hidden');
+      } else {
+        loadUserDataAndShowApp();
+      }
+    }
+
+    function setupPinInputs() {
+      const inputs = document.querySelectorAll('.pin-input');
+      inputs.forEach((input, index) => {
+        input.addEventListener('keyup', (e) => {
+          if (e.key >= '0' && e.key <= '9') {
+            if (index < inputs.length - 1) inputs[index + 1].focus();
+            else verifyPin();
+          } else if (e.key === 'Backspace' && index > 0) {
+            inputs[index - 1].focus();
+          }
+        });
+      });
+    }
+
+    function verifyPin() {
+      const enteredPin = Array.from(document.querySelectorAll('.pin-input')).map(i => i.value).join('');
+      const usersDB = JSON.parse(localStorage.getItem('wf_users_db')) || {};
+      const userData = usersDB[currentUser];
+
+      if (userData && userData.pin === enteredPin) {
+        document.querySelectorAll('.pin-input').forEach(i => i.value = '');
+        loadUserDataAndShowApp();
+      } else {
+        alert(currentLang === 'th' ? 'รหัส PIN ไม่ถูกต้อง' : 'Incorrect PIN');
+        document.querySelectorAll('.pin-input').forEach(i => i.value = '');
+        document.getElementById('pin1').focus();
+      }
+    }
+
+    function lockWithPin() {
+      showScreen('pinScreen');
+    }
+
+    function loadUserDataAndShowApp() {
+      transactions = JSON.parse(localStorage.getItem(`wf_txs_${currentUser}`)) || [];
+      showScreen('appScreen');
+      renderApp();
+    }
+
+    function showScreen(screenId) {
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('pinScreen').classList.add('hidden');
+      document.getElementById('appScreen').classList.add('hidden');
+      document.getElementById(screenId).classList.remove('hidden');
+    }
+
+    function setType(type) {
+      document.getElementById('selectedType').value = type;
+      ['income', 'expense', 'borrow', 'lend'].forEach(t => {
+        const btn = document.getElementById(`typeBtn-${t}`);
+        if (t === type) {
+          btn.className = 'py-1.5 text-[11px] font-semibold rounded-lg bg-white shadow-xs text-teal-600 transition';
+        } else {
+          btn.className = 'py-1.5 text-[11px] font-semibold rounded-lg text-slate-500 transition';
+        }
+      });
+
+      const debtFields = document.getElementById('debtFields');
+      if (type === 'borrow' || type === 'lend') {
+        debtFields.classList.remove('hidden');
+      } else {
+        debtFields.classList.add('hidden');
+      }
+    }
+
+    function addTransaction(e) {
+      e.preventDefault();
+      const type = document.getElementById('selectedType').value;
+      const category = document.getElementById('categorySelect').value;
+      const amount = parseFloat(document.getElementById('amount').value);
+      const note = document.getElementById('note').value.trim();
+      const person = document.getElementById('person').value.trim();
+      const dueDate = document.getElementById('dueDate').value;
+
+      if (!amount || amount <= 0) return;
+
+      const tx = {
+        id: Date.now(),
+        type,
+        category,
+        amount,
+        repaidAmount: 0,
+        note,
+        person: (type === 'borrow' || type === 'lend') ? person : '',
+        dueDate: (type === 'borrow' || type === 'lend') ? dueDate : '',
+        date: new Date().toISOString()
+      };
+
+      transactions.unshift(tx);
+      saveTransactions();
+      renderApp();
+      document.getElementById('trackerForm').reset();
+      setType('income');
+    }
+
+    function deleteTransaction(id) {
+      if (confirm(currentLang === 'th' ? 'ต้องการลบรายการนี้ใช่หรือไม่?' : 'Delete this item?')) {
+        transactions = transactions.filter(t => t.id !== id);
+        saveTransactions();
+        renderApp();
+      }
+    }
+
+    function openRepayModal(id) {
+      activeRepayId = id;
+      const tx = transactions.find(t => t.id === id);
+      if (!tx) return;
+      const remaining = tx.amount - (tx.repaidAmount || 0);
+      document.getElementById('repaySubText').innerText = `${currentLang === 'th' ? 'ยอดค้างชำระคงเหลือ' : 'Remaining'}: ฿${remaining.toLocaleString('th-TH')}`;
+      document.getElementById('repayAmount').value = '';
+      document.getElementById('repayModal').classList.remove('hidden');
+    }
+
+    function closeRepayModal() {
+      document.getElementById('repayModal').classList.add('hidden');
+      activeRepayId = null;
+    }
+
+    function submitRepay() {
+      const repayVal = parseFloat(document.getElementById('repayAmount').value);
+      if (!repayVal || repayVal <= 0 || !activeRepayId) return;
+
+      const tx = transactions.find(t => t.id === activeRepayId);
+      if (tx) {
+        tx.repaidAmount = (tx.repaidAmount || 0) + repayVal;
+        saveTransactions();
+        renderApp();
+        closeRepayModal();
+      }
+    }
+
+    function saveTransactions() {
+      localStorage.setItem(`wf_txs_${currentUser}`, JSON.stringify(transactions));
+    }
+
+    function renderApp() {
+      const usersDB = JSON.parse(localStorage.getItem('wf_users_db')) || {};
+      const userData = usersDB[currentUser] || {};
+
+      // Profile Header
+      document.getElementById('displayUsername').querySelector('span').innerText = currentUser || 'User';
+      document.getElementById('avatarLetter').innerText = (currentUser || 'U').charAt(0).toUpperCase();
+      document.getElementById('modalAvatarLetter').innerText = (currentUser || 'U').charAt(0).toUpperCase();
+
+      if (userData.avatar) {
+        document.getElementById('userAvatarBox').innerHTML = `<img src="${userData.avatar}" class="w-full h-full object-cover">`;
+        document.getElementById('modalAvatarPreview').innerHTML = `<img src="${userData.avatar}" class="w-full h-full object-cover">`;
+      }
+
+      // Calculations
+      let totalIncome = 0, totalExpense = 0, totalBorrow = 0, totalLend = 0;
+
+      transactions.forEach(t => {
+        if (t.type === 'income') totalIncome += t.amount;
+        else if (t.type === 'expense') totalExpense += t.amount;
+        else if (t.type === 'borrow') {
+          const unpaid = t.amount - (t.repaidAmount || 0);
+          if (unpaid > 0) totalBorrow += unpaid;
+        } else if (t.type === 'lend') {
+          const unpaid = t.amount - (t.repaidAmount || 0);
+          if (unpaid > 0) totalLend += unpaid;
+        }
+      });
+
+      const netBalance = totalIncome - totalExpense;
+      document.getElementById('totalBalance').innerText = `฿${netBalance.toLocaleString('th-TH', {minimumFractionDigits: 2})}`;
+      document.getElementById('totalBorrow').innerText = `฿${totalBorrow.toLocaleString('th-TH')}`;
+      document.getElementById('totalLend').innerText = `฿${totalLend.toLocaleString('th-TH')}`;
+
+      // Budget Progress
+      const monthlyBudget = userData.budget || 15000;
+      const budgetPct = Math.min(100, (totalExpense / monthlyBudget) * 100);
+      document.getElementById('budgetText').innerText = `฿${totalExpense.toLocaleString('th-TH')} / ฿${monthlyBudget.toLocaleString('th-TH')}`;
+      document.getElementById('budgetBar').style.width = `${budgetPct}%`;
+      document.getElementById('budgetBar').className = budgetPct > 90 ? 'bg-rose-500 h-2 rounded-full transition-all' : 'bg-teal-500 h-2 rounded-full transition-all';
+
+      renderList();
+      renderChart();
+    }
+
+    function filterList(type) {
+      activeFilter = type;
+      ['all', 'cash', 'debt'].forEach(f => {
+        const btn = document.getElementById(`filterBtn-${f}`);
+        if (f === type) btn.className = 'px-2.5 py-1 rounded-md bg-white text-slate-800 shadow-xs';
+        else btn.className = 'px-2.5 py-1 rounded-md text-slate-500';
+      });
+      renderList();
+    }
+
+    function renderList() {
+      const listContainer = document.getElementById('transactionList');
+      listContainer.innerHTML = '';
+
+      const filtered = transactions.filter(t => {
+        if (activeFilter === 'cash') return t.type === 'income' || t.type === 'expense';
+        if (activeFilter === 'debt') return t.type === 'borrow' || t.type === 'lend';
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        listContainer.innerHTML = `<p class="text-center text-xs text-slate-400 py-6">${i18n[currentLang].empty}</p>`;
+        return;
+      }
+
+      filtered.forEach(t => {
+        const item = document.createElement('div');
+        item.className = 'bg-white p-3.5 rounded-2xl border border-slate-100 shadow-xs flex items-center justify-between gap-3';
+
+        let badgeColor = 'text-slate-600 bg-slate-50';
+        let amountSign = '';
+        let amountColor = 'text-slate-800';
+
+        if (t.type === 'income') {
+          badgeColor = 'text-teal-600 bg-teal-50';
+          amountSign = '+';
+          amountColor = 'text-teal-600';
+        } else if (t.type === 'expense') {
+          badgeColor = 'text-rose-600 bg-rose-50';
+          amountSign = '-';
+          amountColor = 'text-rose-600';
+        } else if (t.type === 'borrow') {
+          badgeColor = 'text-amber-600 bg-amber-50';
+          amountColor = 'text-amber-600';
+        } else if (t.type === 'lend') {
+          badgeColor = 'text-indigo-600 bg-indigo-50';
+          amountColor = 'text-indigo-600';
+        }
+
+        const remaining = (t.type === 'borrow' || t.type === 'lend') ? (t.amount - (t.repaidAmount || 0)) : 0;
+        const isPaid = (t.type === 'borrow' || t.type === 'lend') && remaining <= 0;
+
+        item.innerHTML = `
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-9 h-9 rounded-xl ${badgeColor} flex items-center justify-center font-bold text-xs shrink-0">
+              ${t.category ? t.category.charAt(0) : '💰'}
+            </div>
+            <div class="min-w-0">
+              <p class="text-xs font-bold text-slate-800 truncate">${t.note || t.category || i18n[currentLang][`type${t.type.charAt(0).toUpperCase() + t.type.slice(1)}`]}</p>
+              <p class="text-[10px] text-slate-400 mt-0.5">
+                ${new Date(t.date).toLocaleDateString(currentLang === 'th' ? 'th-TH' : 'en-US')}
+                ${t.person ? ` • ${t.person}` : ''}
+              </p>
+            </div>
+          </div>
+
+          <div class="text-right shrink-0">
+            <p class="text-xs font-bold ${amountColor}">${amountSign}฿${t.amount.toLocaleString('th-TH')}</p>
+            ${(t.type === 'borrow' || t.type === 'lend') ? `
+              <div class="flex items-center justify-end gap-1 mt-1">
+                <span class="text-[9px] font-semibold ${isPaid ? 'text-teal-600' : 'text-amber-600'}">
+                  ${isPaid ? i18n[currentLang].paid : `${i18n[currentLang].pending} ฿${remaining.toLocaleString('th-TH')}`}
+                </span>
+                ${!isPaid ? `<button onclick="openRepayModal(${t.id})" class="text-[9px] bg-slate-100 px-1.5 py-0.5 rounded hover:bg-slate-200">${i18n[currentLang].confirmBtn}</button>` : ''}
+              </div>
+            ` : ''}
+          </div>
+          <button onclick="deleteTransaction(${t.id})" class="text-slate-300 hover:text-rose-500 p-1 transition">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        `;
+
+        listContainer.appendChild(item);
+      });
+
+      lucide.createIcons();
+    }
+
+    function renderChart() {
+      const ctx = document.getElementById('expenseChart').getContext('2d');
+      const categories = {};
+
+      transactions.filter(t => t.type === 'expense').forEach(t => {
+        categories[t.category] = (categories[t.category] || 0) + t.amount;
+      });
+
+      const labels = Object.keys(categories);
+      const data = Object.values(categories);
+
+      if (chartInstance) chartInstance.destroy();
+
+      if (data.length === 0) {
+        chartInstance = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: ['No Data'],
+            datasets: [{ data: [1], backgroundColor: ['#e2e8f0'] }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+        return;
+      }
+
+      chartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: ['#f43f5e', '#14b8a6', '#f59e0b', '#6366f1', '#8b5cf6', '#ec4899']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    // Modal & Settings functions
+    function openProfileModal() { document.getElementById('profileModal').classList.remove('hidden'); }
+    function closeProfileModal() { document.getElementById('profileModal').classList.add('hidden'); }
+
+    function uploadAvatar(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const usersDB = JSON.parse(localStorage.getItem('wf_users_db')) || {};
+        if (usersDB[currentUser]) {
+          usersDB[currentUser].avatar = evt.target.result;
+          localStorage.setItem('wf_users_db', JSON.stringify(usersDB));
+          renderApp();
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function saveBudgetSetting() {
+      const val = parseFloat(document.getElementById('budgetInput').value);
+      if (!val || val <= 0) return;
+
+      const usersDB = JSON.parse(localStorage.getItem('wf_users_db')) || {};
+      if (usersDB[currentUser]) {
+        usersDB[currentUser].budget = val;
+        localStorage.setItem('wf_users_db', JSON.stringify(usersDB));
+        renderApp();
+        alert(currentLang === 'th' ? 'บันทึกงบประมาณสำเร็จ' : 'Budget saved');
+      }
+    }
+
+    function savePinSetting() {
+      const pin = document.getElementById('newPinInput').value.trim();
+      if (pin.length !== 4) {
+        alert(currentLang === 'th' ? 'กรุณากรอก PIN 4 หลัก' : 'Enter 4-digit PIN');
+        return;
+      }
+
+      const usersDB = JSON.parse(localStorage.getItem('wf_users_db')) || {};
+      if (usersDB[currentUser]) {
+        usersDB[currentUser].pin = pin;
+        localStorage.setItem('wf_users_db', JSON.stringify(usersDB));
+        document.getElementById('lockBtn').classList.remove('hidden');
+        alert(currentLang === 'th' ? 'ตั้งค่า PIN สำเร็จ' : 'PIN saved');
+      }
+    }
+
+    function handleChangePassword(e) {
+      e.preventDefault();
+      const oldP = document.getElementById('oldPassword').value;
+      const newP = document.getElementById('newPassword').value;
+      const confP = document.getElementById('confirmNewPassword').value;
+
+      const usersDB = JSON.parse(localStorage.getItem('wf_users_db')) || {};
+      const userData = usersDB[currentUser];
+
+      if (userData.password !== oldP) {
+        alert(currentLang === 'th' ? 'รหัสผ่านปัจจุบันไม่ถูกต้อง' : 'Current password incorrect');
+        return;
+      }
+      if (newP !== confP) {
+        alert(currentLang === 'th' ? 'รหัสผ่านใหม่ไม่ตรงกัน' : 'New passwords do not match');
+        return;
+      }
+
+      userData.password = newP;
+      localStorage.setItem('wf_users_db', JSON.stringify(usersDB));
+      alert(currentLang === 'th' ? 'เปลี่ยนรหัสผ่านสำเร็จ' : 'Password updated');
+      closeProfileModal();
+    }
+
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(transactions));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `wealthflow_backup_${currentUser}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function importData(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const imported = JSON.parse(evt.target.result);
+          if (Array.isArray(imported)) {
+            transactions = imported;
+            saveTransactions();
+            renderApp();
+            alert(currentLang === 'th' ? 'นำเข้าข้อมูลสำเร็จ' : 'Data imported successfully');
+          }
+        } catch (err) {
+          alert(currentLang === 'th' ? 'ไฟล์ไม่ถูกต้อง' : 'Invalid file format');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function logout() {
+      localStorage.removeItem('wf_active_user');
+      sessionStorage.removeItem('wf_active_user');
+      currentUser = null;
+      closeProfileModal();
+      showScreen('authScreen');
+    }
+  </script>
+</body>
+</html>
